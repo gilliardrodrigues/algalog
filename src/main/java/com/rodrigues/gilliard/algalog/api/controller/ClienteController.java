@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.rodrigues.gilliard.algalog.api.mapper.ClienteMapper;
+import com.rodrigues.gilliard.algalog.api.model.ClienteModel;
+import com.rodrigues.gilliard.algalog.api.model.input.ClienteInput;
 import com.rodrigues.gilliard.algalog.domain.model.Cliente;
 import com.rodrigues.gilliard.algalog.domain.service.ClienteService;
 
@@ -26,29 +29,35 @@ public class ClienteController {
 
 	@Autowired
     private ClienteService clienteService;
+	
+	@Autowired
+	private ClienteMapper clienteMapper;
 
     @GetMapping
-    public List<Cliente> listar() {
-        return clienteService.buscarTodos();
+    public List<ClienteModel> listar() {
+        return clienteMapper.toCollectionModel(clienteService.buscarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Cliente> buscarPeloId(@PathVariable Long id) {
+    public ResponseEntity<ClienteModel> buscarPeloId(@PathVariable Long id) {
         return clienteService.buscarPeloId(id)
-        		.map(cliente -> ResponseEntity.ok(cliente))
+        		.map(cliente -> ResponseEntity.ok(clienteMapper.toModel(cliente)))
 				.orElse(ResponseEntity.notFound().build());
     }
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public Cliente salvar(@Valid @RequestBody Cliente cliente){
-        return clienteService.salvar(cliente);
+    public ClienteModel salvar(@Valid @RequestBody ClienteInput clienteInput){
+    	Cliente novoCliente = clienteMapper.toEntity(clienteInput);
+    	Cliente clienteSalvo = clienteService.salvar(novoCliente);
+        return clienteMapper.toModel(clienteSalvo);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Cliente> alterar(@Valid @PathVariable Long id, @RequestBody Cliente cliente){
-        cliente.setId(id);
-        return clienteService.verificaSeClienteExistePeloId(id) ? ResponseEntity.ok(clienteService.salvar(cliente)) : ResponseEntity.notFound().build();
+    public ResponseEntity<ClienteModel> alterar(@Valid @PathVariable Long id, @RequestBody ClienteInput clienteInput){
+        Cliente cliente = clienteMapper.toEntity(clienteInput);
+    	cliente.setId(id);
+        return clienteService.verificaSeClienteExistePeloId(id) ? ResponseEntity.ok(clienteMapper.toModel(clienteService.salvar(cliente))) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")

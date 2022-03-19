@@ -26,7 +26,8 @@ public class ClienteService
 	}
 	
 	public Optional<Cliente> buscarPeloId(Long idCliente) {
-		return clienteRepository.findById(idCliente);
+		return Optional.of(clienteRepository.findById(idCliente)
+				.orElseThrow(() -> new NegocioException("Cliente não encontrado!")));
 	}
 	
 	@Transactional

@@ -1,6 +1,6 @@
 package com.rodrigues.gilliard.algalog.api.exceptionHandler;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.rodrigues.gilliard.algalog.domain.exception.EntidadeNaoEncontradaException;
 import com.rodrigues.gilliard.algalog.domain.exception.NegocioException;
 
 @ControllerAdvice
@@ -37,14 +38,20 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, montarCorpoDoErro(ex.getMessage(), status), new HttpHeaders(), status, request);
     }
     
+    @ExceptionHandler(EntidadeNaoEncontradaException.class)
+    public ResponseEntity<Object> handleEntidadeNaoEncontradaException(EntidadeNaoEncontradaException ex, WebRequest request){
+        HttpStatus status = HttpStatus.NOT_FOUND;
+        return handleExceptionInternal(ex, montarCorpoDoErro(ex.getMessage(), status), new HttpHeaders(), status, request);
+    }
+    
     private List<Erro.Campo> retornarListaDeErros(MethodArgumentNotValidException ex){
         List<Erro.Campo> erros = new ArrayList<>();
 
         for(ObjectError erro : ex.getBindingResult().getAllErrors()){
-            String campo = ((FieldError) erro).getField();
+            String nomeCampo = ((FieldError) erro).getField();
             String mensagem = msgSource.getMessage(erro, LocaleContextHolder.getLocale());
 
-            erros.add(new Erro.Campo(campo, mensagem));
+            erros.add(new Erro.Campo(nomeCampo, mensagem));
         }
         
         return erros;
@@ -54,7 +61,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         var erro = new Erro();
 
         erro.setStatus(status.value());
-        erro.setDataHora(LocalDateTime.now());
+        erro.setDataHora(OffsetDateTime.now());
         erro.setTitulo(mensagem);
         erro.setCampos(retornarListaDeErros(ex));
 
@@ -65,7 +72,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         var erro = new Erro();
 
         erro.setStatus(status.value());
-        erro.setDataHora(LocalDateTime.now());
+        erro.setDataHora(OffsetDateTime.now());
         erro.setTitulo(mensagem);
 
         return erro;
